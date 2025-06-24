@@ -26,5 +26,5 @@
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/your-username/innacle_teachable_machine.git
-   cd innacle_teachable_machine
+   git clone https://github.com/your-username/pinnacle_teachable_machine.git
+   cd pinnacle_teachable_machine
