@@ -30,7 +30,7 @@ def transcribe_speech(timeout=5, phrase_time_limit=10) -> str:
 def search_google(query: str) -> str:
     """Get the first snippet from a Google search result."""
     try:
-        for result in search(query, num_results=1):
+        for result in search(query, stop=1):  # ✅ Fixed line (replaces num_results)
             page = requests.get(result, timeout=10)
             soup = BeautifulSoup(page.text, "html.parser")
             p_tags = soup.find_all('p')
@@ -45,8 +45,8 @@ def get_answer_from_wikipedia(query: str) -> str:
     try:
         summary = wikipedia.summary(query, sentences=2)
         return f"{summary}\n\nSource: https://en.wikipedia.org/wiki/{query.replace(' ', '_')}"
-    except wikipedia.exceptions.DisambiguationError as e:
-        return f"Your query was too broad. Try to be more specific."
+    except wikipedia.exceptions.DisambiguationError:
+        return "Your query was too broad. Try to be more specific."
     except wikipedia.exceptions.PageError:
         return "No Wikipedia page found."
     except Exception as e:
@@ -65,6 +65,5 @@ def transcribe_and_answer() -> str:
     else:
         answer = wiki_answer
 
-    # Speak the answer aloud
     speak(answer)
     return answer

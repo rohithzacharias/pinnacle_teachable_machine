@@ -7,7 +7,7 @@ import mimetypes
 from image_mode import get_image_description
 from video_mode import get_video_description
 from link_mode import describe_from_link, download_youtube_video, download_file_from_url
-from audio_mode import transcribe_and_answer  # <-- CHANGED THIS
+from audio_mode import transcribe_and_answer
 
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
@@ -16,10 +16,7 @@ app = ctk.CTk()
 app.title("🤖 Teachable AI Machine")
 app.geometry("900x800")
 
-title_label = ctk.CTkLabel(
-    app, text="🤖 Teachable AI Machine",
-    font=ctk.CTkFont(size=28, weight="bold")
-)
+title_label = ctk.CTkLabel(app, text="🤖 Teachable AI Machine", font=ctk.CTkFont(size=28, weight="bold"))
 title_label.pack(pady=10)
 
 tabview = ctk.CTkTabview(app, width=860, height=680)
@@ -34,9 +31,7 @@ image_preview_label = ctk.CTkLabel(image_tab, text="")
 image_preview_label.pack(pady=5)
 
 def browse_image():
-    file_path = filedialog.askopenfilename(
-        filetypes=[("Images", "*.jpg;*.jpeg;*.png;*.bmp")]
-    )
+    file_path = filedialog.askopenfilename(filetypes=[("Images", "*.jpg;*.jpeg;*.png;*.bmp")])
     if file_path:
         image_path_var.set(file_path)
         img = Image.open(file_path).resize((200, 200))
@@ -69,9 +64,7 @@ progress_bar = ctk.CTkProgressBar(video_tab, width=800)
 progress_bar.set(0)
 
 def browse_video():
-    file_path = filedialog.askopenfilename(
-        filetypes=[("Videos", "*.mp4;*.avi;*.mkv;*.mov")]
-    )
+    file_path = filedialog.askopenfilename(filetypes=[("Videos", "*.mp4;*.avi;*.mkv;*.mov")])
     if file_path:
         video_path_var.set(file_path)
         cap = cv2.VideoCapture(file_path)
@@ -91,31 +84,31 @@ def describe_video():
             start_time = float(start_time_var.get()) if start_time_var.get() else 0
             end_time = float(end_time_var.get()) if end_time_var.get() else None
         except ValueError:
-            messagebox.showerror("Error", "Please enter valid numbers for time!")
+            messagebox.showerror("Error", "Invalid time values")
             return
 
         import threading
         def progress_cb(progress):
             progress_bar.set(progress)
-            progress_label.configure(text=f"Processing... {progress*100:.1f}%")
+            progress_label.configure(text=f"Processing... {progress * 100:.1f}%")
 
-        def work():
+        def worker():
             summary = get_video_description(path, start_time, end_time, progress_callback=progress_cb)
             video_output_text.delete("1.0", "end")
             video_output_text.insert("end", summary)
-            progress_label.configure(text="✅ Done!")
+            progress_label.configure(text="✅ Done")
 
-        threading.Thread(target=work, daemon=True).start()
+        threading.Thread(target=worker, daemon=True).start()
 
 ctk.CTkButton(video_tab, text="Browse Video", command=browse_video, width=180).pack(pady=5)
 ctk.CTkLabel(video_tab, textvariable=video_path_var).pack(pady=5)
 
-time_frame = ctk.CTkFrame(video_tab)
-ctk.CTkLabel(time_frame, text="Start Time (s):").pack(side="left", padx=5)
-ctk.CTkEntry(time_frame, width=60, textvariable=start_time_var).pack(side="left", padx=5)
-ctk.CTkLabel(time_frame, text="End Time (s):").pack(side="left", padx=5)
-ctk.CTkEntry(time_frame, width=60, textvariable=end_time_var).pack(side="left", padx=5)
-time_frame.pack(pady=5)
+video_time_frame = ctk.CTkFrame(video_tab)
+ctk.CTkLabel(video_time_frame, text="Start Time (s):").pack(side="left", padx=5)
+ctk.CTkEntry(video_time_frame, width=60, textvariable=start_time_var).pack(side="left", padx=5)
+ctk.CTkLabel(video_time_frame, text="End Time (s):").pack(side="left", padx=5)
+ctk.CTkEntry(video_time_frame, width=60, textvariable=end_time_var).pack(side="left", padx=5)
+video_time_frame.pack(pady=5)
 
 ctk.CTkButton(video_tab, text="Describe Video", command=describe_video, width=180).pack(pady=5)
 video_preview_label.pack(pady=5)
@@ -142,37 +135,39 @@ def describe_link():
         start_time = float(link_start_time_var.get()) if link_start_time_var.get() else 0
         end_time = float(link_end_time_var.get()) if link_end_time_var.get() else None
     except ValueError:
-        messagebox.showerror("Error", "Please enter valid numbers for time!")
+        messagebox.showerror("Error", "Invalid start/end time")
         return
 
-    file_path = None
-    if "youtube.com" in url or "youtu.be" in url:
-        file_path = download_youtube_video(url)
-    else:
-        file_path = download_file_from_url(url)
+    try:
+        if "youtube.com" in url or "youtu.be" in url:
+            file_path = download_youtube_video(url)
+        else:
+            file_path = download_file_from_url(url)
 
-    mimetype, _ = mimetypes.guess_type(file_path)
-    mimetype = mimetype or ""
+        mimetype, _ = mimetypes.guess_type(file_path)
+        mimetype = mimetype or ""
 
-    if mimetype.startswith("image"):
-        img = Image.open(file_path).resize((200, 200))
-        preview = ImageTk.PhotoImage(img)
-        link_preview_label.configure(image=preview)
-        link_preview_label.image = preview
-    elif mimetype.startswith("video"):
-        cap = cv2.VideoCapture(file_path)
-        success, frame = cap.read()
-        cap.release()
-        if success:
-            img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            img = Image.fromarray(img).resize((200, 200))
+        if mimetype.startswith("image"):
+            img = Image.open(file_path).resize((200, 200))
             preview = ImageTk.PhotoImage(img)
             link_preview_label.configure(image=preview)
             link_preview_label.image = preview
+        elif mimetype.startswith("video"):
+            cap = cv2.VideoCapture(file_path)
+            success, frame = cap.read()
+            cap.release()
+            if success:
+                img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                img = Image.fromarray(img).resize((200, 200))
+                preview = ImageTk.PhotoImage(img)
+                link_preview_label.configure(image=preview)
+                link_preview_label.image = preview
 
-    summary = describe_from_link(file_path, start_time, end_time)
-    link_output_text.delete("1.0", "end")
-    link_output_text.insert("end", summary)
+        summary = describe_from_link(file_path, start_time, end_time)
+        link_output_text.delete("1.0", "end")
+        link_output_text.insert("end", summary)
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to process link: {e}")
 
 ctk.CTkLabel(link_tab, text="Paste Image/Video Link:").pack(pady=5)
 ctk.CTkEntry(link_tab, textvariable=link_var, width=600).pack(pady=5)
@@ -200,5 +195,5 @@ def record_and_answer():
 ctk.CTkButton(audio_tab, text="Ask a Question (Speak)", command=record_and_answer, width=220).pack(pady=20)
 audio_output_text.pack(pady=10)
 
-# Run app
+# Run App
 app.mainloop()
